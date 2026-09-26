@@ -1,0 +1,107 @@
+// Pariksha Setu / Merit Marg — production schema (PostgreSQL, Render-ready)
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String?
+  googleId     String?  @unique
+  role         Role     @default(USER)
+  examChoice   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  lastSeenAt   DateTime @default(now())
+
+  attempts   Attempt[]
+  bookings   Booking[]
+  planAccess PlanAccess[]
+  events     ActivityEvent[]
+
+  @@index([createdAt])
+  @@index([role])
+}
+
+model Attempt {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  testId      String
+  testTitle   String
+  examSlug    String?
+  post        String?
+  cycle       String?
+  score       Int
+  maxScore    Int
+  correct     Int
+  wrong       Int
+  unattempted Int
+  total       Int
+  weakTopics  String[]
+  answers     Json?
+  takenAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([testId])
+  @@index([takenAt])
+}
+
+model Booking {
+  id         String   @id @default(cuid())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  mentorSlug String
+  mentorName String
+  post       String?
+  subject    String?
+  date       String
+  time       String
+  price      Int
+  paid       Boolean  @default(false)
+  paymentId  String?
+  orderId    String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model PlanAccess {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  plan      String   @default("day-by-day-99")
+  amount    Int      @default(99)
+  paymentId String
+  orderId   String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, plan])
+  @@index([createdAt])
+}
+
+// Generic activity log — powers the admin "activity" feed and stats.
+model ActivityEvent {
+  id        String   @id @default(cuid())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId    String?
+  type      String   // signup | login | attempt_submitted | booking_created | plan_purchased | ...
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([type])
+  @@index([createdAt])
+  @@index([userId])
+}
