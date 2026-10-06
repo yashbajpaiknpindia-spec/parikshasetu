@@ -1,0 +1,44 @@
+{
+  "name": "pariksha-setu",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "npm run db:migrate && npm run db:repair && npm run db:verify && npm run db:seed && next build",
+    "start": "npm run db:repair && npm run db:verify && next start",
+    "postinstall": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio",
+    "typecheck": "tsc --noEmit",
+    "db:repair": "prisma db execute --schema ./prisma/schema.prisma --file ./prisma/migrations/20261004190000_repair_schema_drift/migration.sql && prisma db execute --schema ./prisma/schema.prisma --file ./prisma/migrations/20261006000000_roz_postgres/migration.sql",
+    "db:verify": "tsx scripts/verify-db.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.3.1",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.116.0",
+    "bcryptjs": "^3.0.3",
+    "clsx": "^2.1.1",
+    "jose": "^5.9.6",
+    "lucide-react": "^1.47.0",
+    "next": "16.3.8",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "tailwind-merge": "^3.7.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "prisma": "^6.3.1",
+    "tailwindcss": "^4",
+    "tsx": "^4.19.2",
+    "typescript": "^5"
+  },
+  "overrides": {
+    "browserslist": "4.29.1",
+    "postcss": "8.5.28"
+  }
+}

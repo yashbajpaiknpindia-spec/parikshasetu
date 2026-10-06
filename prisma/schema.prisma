@@ -1,0 +1,229 @@
+// Pariksha Setu / Merit Marg — production schema (PostgreSQL, Render-ready)
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String?
+  googleId     String?  @unique
+  role         Role     @default(USER)
+  examChoice   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  lastSeenAt   DateTime @default(now())
+
+  attempts   Attempt[]
+  bookings   Booking[]
+  planAccess PlanAccess[]
+  events     ActivityEvent[]
+  passwordResetTokens PasswordResetToken[]
+
+  @@index([createdAt])
+  @@index([role])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Attempt {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  testId      String
+  testTitle   String
+  examSlug    String?
+  post        String?
+  cycle       String?
+  score       Int
+  maxScore    Int
+  correct     Int
+  wrong       Int
+  unattempted Int
+  total       Int
+  weakTopics  String[]
+  answers     Json?
+  markedForReview String[] @default([])
+  takenAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([testId])
+  @@index([takenAt])
+}
+
+model Booking {
+  id         String   @id @default(cuid())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  mentorSlug String
+  mentorName String
+  post       String?
+  subject    String?
+  date       String
+  time       String
+  price      Int
+  paid       Boolean  @default(false)
+  paymentId  String?
+  orderId    String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model PlanAccess {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  plan      String   @default("day-by-day-99")
+  amount    Int      @default(99)
+  paymentId       String?
+  orderId         String?
+  source          String   @default("payment")
+  assignedByAdminId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, plan])
+  @@index([createdAt])
+  @@index([assignedByAdminId])
+}
+
+model PricingConfig {
+  id              Int      @id @default(1)
+  prepPrice       Int      @default(99)
+  mentorPrice     Int      @default(199)
+  mentorLive      Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
+  updatedByAdminId String?
+}
+
+model GuestVisit {
+  id         String   @id @default(cuid())
+  visitorId  String
+  path       String
+  ip         String?
+  country    String?
+  region     String?
+  city       String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([visitorId])
+  @@index([createdAt])
+  @@index([path])
+}
+
+// Generic activity log — powers the admin "activity" feed and stats.
+
+model ChallengeRegistration {
+  id         String   @id @default(cuid())
+  regNo      String   @unique
+  name       String
+  mobile     String   @unique
+  exam       String
+  subject    String?
+  district   String?
+  rounds     Int[]
+  consent    Boolean  @default(false)
+  offers     Boolean  @default(false)
+  source     String   @default("challenge")
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([exam])
+  @@index([source])
+}
+
+model ChallengeSubmission {
+  id           String   @id @default(cuid())
+  round        Int
+  name         String
+  mobile       String
+  exam         String
+  paper        String
+  score        Int
+  max          Int
+  correct      Int
+  wrong        Int
+  unattempted  Int
+  startedAt    DateTime
+  submittedAt  DateTime
+  durationSec  Int
+  late         Boolean  @default(false)
+  answers      Json?
+  createdAt    DateTime @default(now())
+
+  @@unique([round, mobile])
+  @@index([round])
+  @@index([round, paper])
+  @@index([submittedAt])
+}
+
+model ActivityEvent {
+  id        String   @id @default(cuid())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId    String?
+  type      String   // signup | login | attempt_submitted | booking_created | plan_purchased | ...
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([type])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+
+model RozAttempt {
+  id          String   @id @default(cuid())
+  kind        String
+  date        String
+  paper       String
+  who         String
+  name        String?
+  exam        String
+  score       Float
+  max         Float
+  correct     Int
+  wrong       Int
+  skipped     Int
+  sec         Int
+  submittedAt DateTime @default(now())
+  answers     Json?
+
+  @@unique([kind, date, paper, who])
+  @@index([date, kind, paper])
+  @@index([date])
+  @@index([who])
+}
+
+model RozUserDay {
+  id        String   @id
+  name      String
+  days      String[]
+  updatedAt DateTime @updatedAt
+
+  @@index([updatedAt])
+}

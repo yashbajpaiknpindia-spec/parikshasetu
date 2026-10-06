@@ -1,0 +1,3 @@
+# Secrets are set in Vercel → Settings → Environment Variables, never uploaded from disk.
+.env*
+!.env.example
